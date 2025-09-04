@@ -1,9 +1,13 @@
 #%%
-import random
-import numpy as np
-import matplotlib.pyplot as plt
-import seaborn as sns   
-#%%
-#Función generadora de numeros aleatorios
+#Generador lineal de congruencia
+def gcl (x0, a, c, m, n):
 
-    def glc
+    x = x0
+
+    numeros = []
+    for i in range(n):
+        x = (a * x + c) % m
+        numeros.append(x / m)
+        
+    return numeros
+# %%
