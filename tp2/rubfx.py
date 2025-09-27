@@ -10,8 +10,18 @@ import numpy as np
 
 #FUNCIÓN POR PARTES QUE DEFINE f(x)
 def t(x, epsilon, sigma, mu):
+
     """
     Defino la función por partes
+    Uso t(x)
+    Parametros:
+        x: input
+        sigma: valor de sigma
+        mu: valor de mu
+        epsilon: valor de epsilon 
+    
+    Returns:
+        t: Valor de la función por partes
     """
 
     if epsilon == 0:
@@ -29,13 +39,15 @@ def f(x, epsilon, sigma, mu):
     Uso t(x)
     Parametros:
         x: input
-        sigma:
-        epsilon:
+        sigma: valor de sigma
+        mu: valor de mu
+        epsilon: valor de epsilon
 
     Returns:
         f: Valor de la función F-T
     """
     t_ep = t(x, epsilon, sigma, mu)
+    
     return (1/sigma) * (t_ep**(epsilon + 1)) * (np.exp(-t_ep))
 #%%
 #FUNCIÓN ACUMULADA DE f
@@ -43,12 +55,20 @@ def f(x, epsilon, sigma, mu):
 def F(x, epsilon, sigma, mu):
 
     """
-
     Defino función acumulada de f(x)
+    Uso t(x)
+    Parametros:
+        x: input
+        sigma: valor de sigma
+        mu: valor de mu
+        epsilon: valor de epsilon
 
+    Returns:
+        F: Valor de la función acumulada
     """
+    t_ep = t(x, epsilon, sigma, mu)
 
-    return np.exp(-t(x, epsilon, sigma, mu))
+    return np.exp(-t_ep)
 
 #%%
 #Función inversa
@@ -56,18 +76,56 @@ def F(x, epsilon, sigma, mu):
 def invF(y, epsilon, sigma, mu):
     """
     Defino función inversa de F(x)
+    Uso F(x)
+    Parametros:
+        y: input
+        sigma: valor de sigma
+        mu: valor de mu
+        epsilon: valor de epsilon
+    
+    Returns:
+        invF: Valor de la función inversa
     """
     if epsilon == 0:
         return -sigma * np.log(-np.log(y)) + mu
     else:
         return sigma/epsilon * ((-np.log(y))**(-epsilon) - 1) + mu
+
 #%%
-#BOOTSTRAP
+# SIMULACIÓN DE UN PROCESO DE POISSON
 
-def bootstrap (x, func, m=1000):
-    y = np.zeros(m)
-    for i in range(m):
-        _x = np.random.choice(x, size=len(x), replace=True)
-        y[i] = func(_x)
-    return y
+def t_exp(lamb):
 
+    """
+    Genera tiempo entre eventos usando transformada inversa
+    
+    Parametros:
+        lamb: tasa de eventos por unidad de tiempo
+    Returns:
+        t_exp: tiempo entre eventos
+    """
+    u = np.random.random()  # Número aleatorio entre 0 y 1
+    return -np.log(1 - u) / (lamb)  # Transformada inversa
+
+#%%
+# SIMULAR PROCESO DE POISSON
+def sim_poisson(lam, T):
+    """
+    Simula proceso de Poisson hasta tiempo T
+    Parametros:
+        lam: tasa de eventos por unidad de tiempo
+        T: tiempo total de simulación
+    Returns:
+        eventos: lista de tiempos de eventos
+    """
+    tiempo_actual = 0
+    eventos = []
+    
+    while tiempo_actual < T:
+        dt = t_exp(lam)  # Tiempo hasta próximo evento
+        tiempo_actual += dt
+        if tiempo_actual < T:
+            eventos.append(tiempo_actual)
+    
+    return eventos
+# %%
