@@ -240,3 +240,26 @@ def mhschechter(M_data, phi_data, phi_err, n_steps=10000, step_size=None, initia
     
     acceptance_rate = n_accepted / n_steps
     return chain, acceptance_rate
+
+#%%
+
+def compute_chain_separation(chains, window_size=500):
+    """Calcula la separación entre cadenas como función del número de pasos"""
+    n_steps = len(chains[0])
+    n_params = chains[0].shape[1]
+    
+    # Puntos donde evaluar la separación
+    eval_points = range(window_size, n_steps, window_size)
+    separations = np.zeros((len(eval_points), n_params))
+    
+    for i, step in enumerate(eval_points):
+        # Tomar ventana de datos hasta este paso
+        window_data = [chain[:step] for chain in chains]
+        
+        # Calcular medias de cada cadena en esta ventana
+        means = np.array([np.mean(chain, axis=0) for chain in window_data])
+        
+        # Separación = desviación estándar de las medias
+        separations[i] = np.std(means, axis=0)
+    
+    return eval_points, separations
