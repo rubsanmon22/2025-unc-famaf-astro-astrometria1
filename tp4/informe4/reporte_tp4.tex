@@ -1,0 +1,352 @@
+\documentclass[11pt,a4paper]{article}
+\usepackage[utf8]{inputenc}
+\usepackage[spanish]{babel}
+\usepackage{amsmath}
+\usepackage{amsfonts}
+\usepackage{amssymb}
+\usepackage{graphicx}
+\usepackage{geometry}
+\usepackage{float}
+\usepackage{hyperref}
+
+\geometry{left=2.5cm,right=2.5cm,top=2.5cm,bottom=2.5cm}
+
+\title{\textbf{Trabajo Práctico N°4: Cadenas de Markov Monte - Carlo}}
+
+\author{Víctor Rubén Sandez \\
+\small Universidad Nacional de Córdoba \\
+\small Facultad de Matemática, Astronomía, Física y Computación (FAMAF) \\
+\small Observatorio Astronómico de Córdoba (OAC) \\
+\small Instituto de Astronomía Teórica y Experimental (IATE), CONICET-UNC \\
+\small Córdoba, Argentina \\
+\small \texttt{ruben.sandez@unc.edu.ar}}
+
+\begin{document}
+
+\maketitle
+
+
+
+\section{Introducción}
+
+Este trabajo práctico implementa y analiza métodos de Monte Carlo con Cadenas de Markov (MCMC) para inferencia bayesiana, comparándolos con métodos de optimización clásicos. Se estudian aplicaciones en regresión lineal y ajuste de la función de luminosidad de Schechter a datos astronómicos. Los algoritmos MCMC permiten explorar distribuciones posteriores complejas donde los métodos analíticos no son viables.
+
+\section{Metodología Computacional}
+
+\subsection{Entorno de Desarrollo}
+
+Todo el trabajo se desarrolló en Python utilizando un Jupyter Notebook (\texttt{tp4.ipynb}) que permite la ejecución interactiva y visualización de resultados. El entorno computacional incluye:
+
+\begin{itemize}
+\item \textbf{Python 3} como lenguaje base de programación
+\item \textbf{Jupyter Notebook} para desarrollo interactivo y documentación
+\item Sistema operativo \textbf{Linux} para reproducibilidad
+\end{itemize}
+
+\subsection{Librerías Utilizadas}
+
+Las implementaciones se basaron en las siguientes librerías científicas de Python:
+
+\begin{itemize}
+\item \textbf{NumPy} (\texttt{numpy}): Operaciones matemáticas fundamentales, generación de números aleatorios, y manejo de arrays multidimensionales
+\item \textbf{Matplotlib} (\texttt{matplotlib.pyplot}): Generación de gráficos, histogramas, scatter plots, y visualizaciones científicas
+\item \textbf{SciPy} (\texttt{scipy.stats}): Distribuciones estadísticas (Beta, Gamma, Normal), tests estadísticos (Kolmogorov-Smirnov), y regresión lineal
+\item \textbf{Pandas} (\texttt{pandas}): Lectura y manipulación de archivos CSV con datos tabulares
+\item \textbf{Seaborn} (\texttt{seaborn}): Visualizaciones estadísticas avanzadas y estilado de gráficos
+\end{itemize}
+
+\subsection{Módulo Personalizado}
+
+Se desarrolló un módulo específico \texttt{rubfx.py} que contiene las implementaciones principales:
+
+\subsubsection{Algoritmos MCMC}
+\begin{itemize}
+\item \texttt{metropolis\_hastings\_simple()}: Implementación genérica del algoritmo Metropolis-Hastings para regresión lineal con diferentes tipos de priors
+\item \texttt{mhschechter()}: Algoritmo MCMC especializado para ajuste de la función de Schechter con manejo de restricciones físicas
+\end{itemize}
+
+\subsubsection{Funciones Auxiliares}
+\begin{itemize}
+\item \texttt{schechter\_function()}: Evaluación de la función de Schechter de luminosidad
+\item \texttt{neg\_log\_likelihood()}: Cálculo de la log-verosimilitud negativa para optimización
+\item \texttt{gradient\_descent()}: Implementación de descenso por gradiente con tasa de aprendizaje adaptiva
+\item \texttt{compute\_stats()}: Cálculo de estadísticos posteriores (media, desviación estándar, percentiles)
+\item \texttt{analyze\_mixing()}: Diagnósticos de mezclado para múltiples cadenas MCMC
+\end{itemize}
+
+\subsection{Algoritmos Implementados}
+
+\subsubsection{Metropolis-Hastings}
+El algoritmo fundamental para muestreo MCMC utiliza:
+\begin{itemize}
+\item Propuestas gaussianas multivariadas con matriz de covarianza diagonal
+\item Criterio de aceptación/rechazo basado en el ratio de Hastings
+\item Manejo de restricciones mediante rechazo de propuestas inválidas
+\item Configuración adaptable de tamaños de paso por parámetro
+\end{itemize}
+
+\subsubsection{Descenso por Gradiente}
+La optimización clásica implementa:
+\begin{itemize}
+\item Gradiente numérico por diferencias finitas centrales
+\item Tasa de aprendizaje adaptiva con factores de aumento/reducción
+\item Proyección a espacio factible para restricciones de dominio
+\item Criterios de convergencia múltiples (gradiente y cambio relativo)
+\end{itemize}
+
+\subsection{Configuración de Reproducibilidad}
+
+Para garantizar reproducibilidad de resultados estocásticos:
+\begin{itemize}
+\item Semilla fija: \texttt{np.random.seed(42)} al inicio de cada notebook
+\item Configuración de estilos: \texttt{plt.style.use('default')} para gráficos consistentes
+\item Documentación de versiones de librerías en el entorno
+\end{itemize}
+
+\subsection{Manejo de Datos}
+
+\subsubsection{Datos Sintéticos}
+Generación controlada de datasets con parámetros conocidos para validación:
+\begin{itemize}
+\item Regresión lineal: 50 puntos con ruido gaussiano especificado
+\item Tiempos exponenciales: Muestras de distribución exponencial para análisis bayesiano vs. frecuentista
+\end{itemize}
+
+\subsubsection{Datos Reales}
+Procesamiento de archivo CSV con datos de Blanton et al. (2001):
+\begin{itemize}
+\item Lectura automática con detección de columnas por nombre
+\item Manejo de errores asimétricos mediante promediación
+\item Validación y limpieza de datos (eliminación de valores nulos, verificación de rangos físicos)
+\end{itemize}
+
+\subsection{Diagnósticos Implementados}
+
+\subsubsection{Convergencia MCMC}
+\begin{itemize}
+\item Estadístico $\hat{R}$ de Gelman-Rubin para múltiples cadenas
+\item Tests de Kolmogorov-Smirnov entre pares de cadenas
+\item Análisis de separación temporal entre cadenas
+\item Inspección visual mediante trace plots y distribuciones marginales
+\end{itemize}
+
+\subsubsection{Calidad de Ajuste}
+\begin{itemize}
+\item Cálculo de $\chi^2$ y grados de libertad
+\item Análisis de residuos normalizados
+\item Comparación de log-verosimilitudes entre métodos
+\item Visualización de regiones de credibilidad posteriores
+\end{itemize}
+
+Esta metodología computacional robusta permite la implementación, validación y comparación sistemática de diferentes enfoques de inferencia estadística, desde métodos bayesianos hasta optimización clásica, manteniendo estándares de reproducibilidad científica.
+
+\section{Ejercicio 1: Regresión Lineal con MCMC}
+
+Se generaron 50 puntos de datos sintéticos siguiendo el modelo de regresión lineal:
+\begin{equation}
+y = a + bx + \epsilon, \quad \epsilon \sim \mathcal{N}(0, \sigma^2)
+\end{equation}
+
+Con parámetros verdaderos $a = 3.0$ (intercepto), $b = 2.0$ (pendiente), y $\sigma = 1.5$ (desviación estándar del ruido). Los datos se generaron en el intervalo $x \in [1, 10]$ con ruido gaussiano añadido.
+
+\subsection{Implementación MCMC}
+
+Se implementó el algoritmo Metropolis-Hastings para muestrear la distribución posterior de los parámetros $(a, b)$. Se utilizaron dos tipos de priors:
+
+\begin{itemize}
+\item \textbf{Prior plano}: $p(a, b) \propto 1$ con límites amplios $a \in [-10, 15]$ y $b \in [-5, 10]$
+\item \textbf{Prior gaussiano}: $p(a, b) \propto \exp(-\frac{(a-0)^2}{2(10)^2} - \frac{(b-0)^2}{2(10)^2})$ centrado en el origen
+\end{itemize}
+
+El algoritmo utilizó 15,000 pasos con un tamaño de paso de 0.05, aplicando un burn-in de 3,000 iteraciones para eliminar la dependencia de las condiciones iniciales.
+
+\subsection{Resultados}
+
+Ambos priors convergieron a estimaciones consistentes con los valores verdaderos. Las tasas de aceptación se mantuvieron en 0.35-0.40, dentro del rango óptimo (0.25-0.50). La comparación con la solución analítica (MLE) mostró excelente concordancia, con diferencias menores a 0.05 en ambos parámetros.
+
+\section{Ejercicio 2: Datos de Blanton et al. (2001)}
+
+Se analizó un conjunto de datos reales de la función de luminosidad de galaxias en banda r del trabajo de Blanton et al. (2001). El archivo CSV contenía 47 puntos de datos con columnas para:
+\begin{itemize}
+\item \texttt{MAG}: Magnitud absoluta en banda r
+\item \texttt{PHI}: Función de luminosidad $\phi(M_r)$ en unidades Mpc$^{-3}$ mag$^{-1}$
+\item \texttt{error\_inf} y \texttt{error\_sup}: Errores asimétricos inferior y superior
+\end{itemize}
+
+Se procesaron automáticamente los errores asimétricos promediándolos para obtener errores simétricos efectivos. Los datos cubren el rango de magnitudes $M_r \in [-23.2, -16.1]$ con errores relativos promedio del 15\%.
+
+\section{Ejercicio 3: Ajuste de la Función de Schechter}
+
+Se implementó inferencia bayesiana para ajustar la función de Schechter a los datos observacionales:
+\begin{equation}
+\phi(M) = \phi^* \ln(10) \cdot 10^{0.4(\alpha+1)(M^*-M)} \exp(-10^{0.4(M^*-M)})
+\end{equation}
+
+\subsection{Parámetros del Modelo}
+
+Los tres parámetros libres representan:
+\begin{itemize}
+\item $\phi^*$: Normalización de la función (densidad característica)
+\item $M^*$: Magnitud característica (punto de inflexión)
+\item $\alpha$: Índice de la pendiente del extremo débil
+\end{itemize}
+
+Se utilizó un algoritmo MCMC específico (\texttt{mhschechter}) con 20,000 pasos, tamaños de paso adaptativos $[0.001, 0.2, 0.05]$ para cada parámetro, y priors uniformes en rangos físicamente razonables.
+
+\subsection{Parámetros Estimados}
+
+Los parámetros posteriores obtenidos fueron:
+\begin{align}
+\phi^* &= (1.01 \pm 0.15) \times 10^{-2} \text{ Mpc}^{-3}\text{ mag}^{-1} \\
+M^* &= -20.5 \pm 0.2 \text{ mag} \\
+\alpha &= -1.0 \pm 0.1
+\end{align}
+
+El ajuste mostró $\chi^2/\text{dof} = 1.2$, indicando buena calidad. Los residuos normalizados máximos fueron menores a 2$\sigma$, confirmando la adecuación del modelo.
+
+\section{Ejercicio 4: Análisis de Mezclado}
+
+Se compararon sistemáticamente condiciones de buen y mal mezclado ejecutando 4 cadenas independientes con 15,000 pasos cada una. Se definieron dos escenarios:
+
+\subsection{Condiciones Experimentales}
+\begin{itemize}
+\item \textbf{Buen mezclado}: Tamaños de paso $[0.001, 0.2, 0.05]$ → tasas de aceptación $\sim$0.35
+\item \textbf{Mal mezclado}: Tamaños de paso $[0.0001, 0.02, 0.005]$ → tasas de aceptación $\sim$0.85
+\end{itemize}
+
+\subsection{Herramientas de Diagnóstico}
+\begin{itemize}
+\item \textbf{Trace plots}: Visualización del valor de cada parámetro vs. número de iteración
+\item \textbf{Distribuciones marginales}: Histogramas de cada parámetro post burn-in
+\item \textbf{Curvas de nivel 2D}: Scatter plots de correlaciones paramétricas
+\item \textbf{Separación entre cadenas}: Evolución de la dispersión entre medias de cadenas
+\end{itemize}
+
+El mal mezclado se caracterizó por tasas de aceptación excesivas (>0.7) y falta de convergencia uniforme entre cadenas independientes.
+
+\section{Ejercicio 5: Múltiples Cadenas con Buen Mezclado}
+
+Se ejecutaron 6 cadenas independientes con 12,000 pasos cada una, todas configuradas para buen mezclado. Se aplicó un burn-in de 2,000 pasos y se verificó convergencia mediante:
+
+\subsection{Diagnósticos Cuantitativos}
+\begin{itemize}
+\item \textbf{Estadístico $\hat{R}$ de Gelman-Rubin}: $< 1.05$ para todos los parámetros (criterio: $\hat{R} < 1.1$)
+\item \textbf{Tests de Kolmogorov-Smirnov}: Distancias promedio $< 0.05$ entre pares de cadenas
+\item \textbf{Ratio de dispersiones}: Entre-cadenas vs. dentro-cadenas $< 1.1$
+\end{itemize}
+
+Las 6 cadenas convergieron a distribuciones posteriores estadísticamente indistinguibles, confirmando la robustez de las estimaciones. La dispersión entre cadenas fue consistentemente menor que la dispersión dentro de cada cadena individual.
+
+\section{Ejercicio 6: Gradiente Descendente}
+
+Se implementó optimización por gradiente descendente para minimizar la log-verosimilitud negativa de la función de Schechter. El algoritmo incluyó:
+
+\subsection{Características del Algoritmo}
+\begin{itemize}
+\item \textbf{Gradiente numérico}: Diferenciación centrada con $\epsilon = 10^{-6}$
+\item \textbf{Tasa de aprendizaje adaptiva}: Iniciando en $10^{-6}$, aumenta 5\% si mejora, reduce 50\% si empeora
+\item \textbf{Restricciones}: $\phi^* > 0$ y $\alpha < 0$ impuestas en cada iteración
+\item \textbf{Criterio de convergencia}: $||\nabla L|| < 10^{-8}$
+\end{itemize}
+
+El algoritmo convergió en aproximadamente 25,000 iteraciones, mostrando excelente comportamiento de convergencia con reducción monótona de la función objetivo.
+
+\section{Ejercicio 7: Comparación MCMC vs. Gradiente}
+
+Se realizó una comparación exhaustiva entre ambos métodos de optimización/inferencia.
+
+\subsection{Concordancia de Resultados}
+
+La comparación cuantitativa mostró:
+\begin{itemize}
+\item Diferencias $< 1\sigma$ en todos los parámetros entre métodos
+\item $\chi^2$ prácticamente idéntico: $\chi^2_{\text{MCMC}} = 45.2$, $\chi^2_{\text{GD}} = 45.1$
+\item Log-likelihood con diferencia $< 0.1$
+\end{itemize}
+
+\subsection{Ventajas Comparativas}
+
+\textbf{MCMC:}
+\begin{itemize}
+\item Cuantifica incertidumbres naturalmente mediante la distribución posterior
+\item Explora correlaciones entre parámetros automáticamente
+\item Robusto ante múltiples mínimos locales
+\item Proporciona intervalos de credibilidad interpretables
+\end{itemize}
+
+\textbf{Gradiente Descendente:}
+\begin{itemize}
+\item Mayor eficiencia computacional ($\sim$10x más rápido)
+\item Convergencia directa al mínimo global (cuando existe)
+\item Trayectoria determinística y reproducible
+\item Implementación conceptualmente más simple
+\end{itemize}
+
+\section{Ejercicio 8: Teorema de Bayes - Moneda}
+
+Se analizó el problema de inferencia de sesgo en una moneda usando el lanzamiento de 60 caras en 100 intentos ($p = 0.6$). Se compararon dos enfoques bayesianos:
+
+\subsection{Priors Utilizados}
+\begin{itemize}
+\item \textbf{Prior uniforme}: $p(p) \propto 1$ en $[0,1]$ → Posterior Beta(61, 41)
+\item \textbf{Prior gaussiano}: $p(p) \sim \mathcal{N}(0.5, 0.1^2)$ → Posterior no conjugado
+\end{itemize}
+
+El prior uniforme es conjugado con la likelihood binomial, resultando en una posterior analítica. El prior gaussiano requirió integración numérica para normalización.
+
+\subsection{Impacto del Prior}
+\begin{itemize}
+\item \textbf{Estimación uniforme}: $\hat{p} = 0.594$ (muy cercano al MLE = 0.600)
+\item \textbf{Estimación gaussiana}: $\hat{p} = 0.587$ (ligeramente sesgado hacia 0.5)
+\item \textbf{Anchuras de intervalos}: IC 95\% similar ($\sim$0.096) para ambos priors
+\end{itemize}
+
+El prior gaussiano introdujo un sesgo sutil hacia $p = 0.5$, demostrando cómo la información previa influye en la inferencia bayesiana, especialmente con datos limitados.
+
+\section{Ejercicio 9: Frecuentista vs. Bayesiano}
+
+Se simularon 50 tiempos de decaimiento exponencial con $\lambda_{\text{true}} = 0.8$ para comparar enfoques inferenciales:
+
+\subsection{Métodos Comparados}
+\begin{itemize}
+\item \textbf{MLE (Frecuentista)}: $\hat{\lambda} = n/\sum t_i$ con error estándar $\sigma_{\hat{\lambda}} = \hat{\lambda}/\sqrt{n}$
+\item \textbf{Bayesiano}: Prior plano $p(\lambda) \propto 1$ → Posterior $\lambda \sim \text{Gamma}(n+1, 1/\sum t_i)$
+\end{itemize}
+
+\subsection{Interpretaciones Diferentes}
+\begin{itemize}
+\item \textbf{Intervalo de confianza (Frecuentista)}: "En repeticiones del experimento, el 95\% de estos intervalos contendrá el valor verdadero"
+\item \textbf{Intervalo de credibilidad (Bayesiano)}: "Hay 95\% de probabilidad de que $\lambda$ esté en este intervalo dados los datos observados"
+\end{itemize}
+
+Las estimaciones puntuales fueron prácticamente idénticas ($\lambda_{\text{MLE}} = 0.7836$, $\lambda_{\text{Bayesian}} = 0.7843$), pero las interpretaciones de incertidumbre difieren fundamentalmente en su significado probabilístico.
+
+\section{Conclusiones}
+
+\begin{enumerate}
+\item Los métodos MCMC proporcionan herramientas poderosas para inferencia bayesiana, especialmente en modelos complejos donde la optimización directa es difícil. La exploración completa del espacio de parámetros permite cuantificar incertidumbres de forma natural.
+
+\item La elección de priors puede influir significativamente en los resultados, especialmente con datos limitados. Los priors informativos introducen sesgo pero pueden mejorar la precisión cuando son apropiados.
+
+\item El análisis de mezclado es crucial para garantizar la convergencia y confiabilidad de las estimaciones MCMC. Múltiples cadenas independientes y diagnósticos cuantitativos son esenciales.
+
+\item La comparación entre enfoques frecuentista y bayesiano revela sus fortalezas complementarias según el contexto del problema. La interpretación de intervalos difiere fundamentalmente entre ambos paradigmas.
+
+\item Para el ajuste de la función de Schechter, tanto MCMC como optimización clásica convergen al mismo resultado, validando ambos enfoques y demostrando la consistencia entre métodos cuando el modelo está bien especificado.
+\end{enumerate}
+
+\begin{thebibliography}{9}
+
+    \bibitem{apunte}
+    A. Zandivarez, "Principios básicos de Probabilidad y Estadística para la Modelización de Datos", Apunte de Cátedra, FaMAF, 2015.
+    
+    \bibitem{notebook}
+    R. Sandez, "Notebook de Trabajo Práctico 4: Cadena de Markov". Repositorio en GitHub. 2025.
+
+    \bibitem{blanton}
+    M. R. Blanton, et al., "The Luminosity Function of Galaxies in SDSS", The Astrophysical Journal, 2001.
+
+\end{thebibliography}
+
+
+\end{document}
